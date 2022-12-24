@@ -1,0 +1,15 @@
+qemu-system-x86_64 \
+-m 64M \
+-name HorizonOS \
+-no-reboot \
+-no-shutdown \
+-fda testDrives/fdrive0.fd \
+-hda HorizonOS.iso \
+-hdb testDrives/hdrive1.hd \
+-monitor stdio \
+-soundhw sb16 \
+-soundhw pcspk \
+-d int \
+-device virtio-mouse \
+-device virtio-keyboard \
+-M smm=off
