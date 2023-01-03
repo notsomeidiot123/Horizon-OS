@@ -4,9 +4,8 @@ printstr:
     .strloop:
         lodsb
         or al, al
-        jz .printstr_ret
+        jz .strret
         int 0x10
         jmp .strloop
-    .printstr_ret:
+    .strret:
         ret
-
