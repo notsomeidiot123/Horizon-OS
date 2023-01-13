@@ -3,3 +3,5 @@ bin
 testDrives
 hd.txt
 HorizonOS.iso
+out.*
+mem.*

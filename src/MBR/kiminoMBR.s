@@ -96,7 +96,7 @@ bootdisc db 0
 offset dd 0
 DAP:
     .size:
-        db 0x1
+        db 0x10
     .res:
         db 0
     .sectors:
