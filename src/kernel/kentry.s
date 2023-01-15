@@ -1,6 +1,7 @@
+extern kmain
+
 bits 32
     ; jmp $
-    mov byte [0xb8000], 0x41
-
+    ; mov word [0xb8000], 0x0f42
+    call kmain
 jmp $
-times 4096 - ($-$$) db 0

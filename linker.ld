@@ -1,14 +1,17 @@
 /* ENTRY(bin/kernel/kentry.o) */
 STARTUP(bin/kernel/kentry.o)
 OUTPUT_FORMAT(binary)
-/* INPUT(
+INPUT(
     bin/kernel/kentry.o
-) */
+    bin/kernel/kernel.o
+    bin/kernel/idt.o
+)
 
 
 SECTIONS{
     .text.start (0x10000) : {
         bin/kernel/kentry.o( .text )
+        bin/kernel/kernel.o( .text )
     }
     .text : ALIGN(CONSTANT(MAXPAGESIZE)) {
         _TEXT_START_ = .;

@@ -113,15 +113,15 @@ db 'K', 'I','M','I'
 dw 0
 Part_0:
     .flags:
-        db 0x81;bootable offset 0
+        db 0x0;bootable offset 0
     .start_head:
         db 0
     .start_sector:
-        db 2
+        db 0
     .start_cyl:
         db 0
     .sys_id:
-        db 0x7f
+        db 0x0
     .end_head:
         db 0
     .end_sector:
@@ -129,7 +129,7 @@ Part_0:
     .end_cyl:
         db 0
     .start_LBA:
-        dd 1
+        dd 0
     .size:
         dd 0
 Part_1:

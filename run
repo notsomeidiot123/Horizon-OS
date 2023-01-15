@@ -13,3 +13,5 @@ qemu-system-x86_64 \
 -device virtio-mouse \
 -device virtio-keyboard \
 -M smm=off
+
+hd HorizonOS.iso > hd.txt

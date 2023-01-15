@@ -4,41 +4,51 @@ bits 16
 jmp 0:start
 times 5 - ($-$$) nop
 BPD:
-    .identifier:  ;01234567
-        db " HAT32A "
-    .physical_block_sz:
-        dw 0x200
-    .sectors_per_cluster:
-        db 0
-    .size_of_FAT:
+    .FSName:
+        db "EXFAT   "
+    .zero:
+        times 53 db 0
+    .part_offset:
+        dd 2048
         dd 0
-    .FAT_Location:  
+    .VolumeLength:
+        dd 0x100000
         dd 0
-    .label:
-        times 12 db 0
-    .hOS_flags:
-        db 0
-    .system_id:
-        db 0
-    .HAT_SIG:
-        db 0x7f
-    .Partition_Length:
+    .FATOffset:
+        dd 0x8000
+    .FATLength:
+        dd 256
+    .ClusterHeapOffset:
+        dd (2048 + 0x8000+ 256)
+    .ClusterCount:
+        dd 0x1EEE0
+    .RootDirCluster:
         dd 0
-    
-
+    .VolSerNum:
+        dd 0x20684f53
+    .FsRev:
+        dw 1
+    .VolFlags:
+        dw 0x2
+    .BytesPerSectorShift:
+        db 12
+    .SectorsPerClusterShift:
+        db 9
+    .numFats:
+        db 1
+    .drivesel:
+        db 0x80
+    .percentUsed:
+        db 0
+    .reserved:
+        times 7 db 0
 
 start:
     
     ; jmp .set_stack
     .set_stack:
-        mov bp, 0x2000
+        mov bp, 0x6000
         mov sp, bp
-        xor cx, cx
-        mov ds, cx
-        mov ss, cx
-        mov es, cx
-        mov fs, cx
-        mov gs, cx
         mov byte [bootdisc], dl
         mov bx, open
         call printstr
@@ -70,7 +80,6 @@ start:
         .no_a20:
             or byte [bootflags], (1 << 7)
     .load_part2:
-        mov cx, 2
         mov bx, Part
         ; xor eax, eax
         .findloop:
@@ -78,34 +87,34 @@ start:
         ; jmp $
             cmp al, 0x7f
             je .load
-            cmp al, 0xee
-            je .gpt
+            ; cmp al, 0xee
+            ; je .gpt
             cmp bx, Part_3
             je error
             add bx, Part_1-Part
             jmp .findloop
 
-        .gpt:
-            cmp cx, 34
-            je error
-            mov word [DAP.start], cx
-            xor ax, ax
-            mov ds, ax
-            mov si, DAP
-            mov ah, 0x42
-            mov dl, byte [bootdisc]
-            int 15h
-            mov bx, -128
-            .gptloop:
-                cmp bx, 0x200
-                je .gpt
-                add bx, 128
-                mov dx,  0x684f
-                cmp dx, word [bx + 0x800]
-                je .gptboot
-                jmp .gptloop
-            .gptboot:
-                jmp error
+        ; .gpt:
+        ;     cmp cx, 34
+        ;     je error
+        ;     mov word [DAP.start], cx
+        ;     xor ax, ax
+        ;     mov ds, ax
+        ;     mov si, DAP
+        ;     mov ah, 0x42
+        ;     mov dl, byte [bootdisc]
+        ;     int 15h
+        ;     mov bx, -128
+        ;     .gptloop:
+        ;         cmp bx, 0x200
+        ;         je .gpt
+        ;         add bx, 128
+        ;         mov dx,  0x684f
+        ;         cmp dx, word [bx + 0x800]
+        ;         je .gptboot
+        ;         jmp .gptloop
+        ;     .gptboot:
+        ;         jmp error
 
         .load:
             clc
@@ -229,7 +238,7 @@ Part:
     .end_cyl:
         db 0xff
     .start_LBA:
-        dd 1
+        dd 2048
     .size:
         dd 0xffffFFFF
 Part_1:
@@ -302,9 +311,9 @@ part2_start:
     mov bx, mem_dect_p
     call printstr
     detect_mem:
-        mov ax, mmap_ptr
+        mov ax, 0
         mov es, ax
-        mov di, 0
+        mov di, mmap_ptr
         xor ebx, ebx
         xor bp, bp
         mov edx, 0x0534d4150
@@ -390,7 +399,7 @@ load_kernel:
     ; jmp $
     mov word [DAP2.segemnt], 0x1000
     mov word [DAP2.offset], 0x0000
-    mov word [DAP2.sectors], 0x1
+    ; mov word [DAP2.sectors], 0x1
 
     xor bx, bx
     xor cx, cx
@@ -452,7 +461,7 @@ DAP2:
     .res:
         db 0
     .sectors:
-        dw 1
+        dw 64
     .offset:
         dw 0
     .segemnt:

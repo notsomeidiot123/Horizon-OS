@@ -1,7 +1,7 @@
 init
 bin
 testDrives
-hd.txt
+hd*
 HorizonOS.iso
 out.*
 mem.*

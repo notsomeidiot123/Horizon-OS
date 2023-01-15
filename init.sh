@@ -1,3 +1,4 @@
+#!/bin/bash
 echo "Creating Directories"
 mkdir bin
 mkdir testDrives
@@ -19,7 +20,11 @@ mkdir shell
 ls -lha
 cd ../
 pwd
+echo "Installing Necessary tools -- MADE FOR UBUNTU"
+
+sudo apt-get install nasm qemu hd
+
 echo "Changing file mode of make and run"
-chmod 777 ./make
-chmod 777 ./run
+chmod +x ./make
+chmod +x ./run
 echo "Finished"
