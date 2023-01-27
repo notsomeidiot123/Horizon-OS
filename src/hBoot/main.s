@@ -374,13 +374,23 @@ check_hardware:
         popfd
         and eax, 0x00200000
         jz .check_pci2_0
-        mov byte [cpuid_present], 0xff
+        mov byte [cpuid_present], 0x1
         mov bx, cpuid_ex
         call printstr
     .check_pci2_0:
         ; xor eax, eax
         ; mov ds, eax
         ; mov es, eax
+    .check_apm:
+        mov ah, 0x53
+        mov al, 0
+        xor bx, bx
+        int 0x15
+        jc load_kernel
+        mov al, [cpuid_present]
+        or eax, 0x2
+        mov byte [cpuid_present], al
+        ; or byte [cpuid_present], 0x2;
 load_kernel:
     clc
     mov bx, kload_p
@@ -388,12 +398,12 @@ load_kernel:
     mov bx, 0
     mov ds, bx
     ; nop
-    mov word [DAP2.sectors], 0x10
+    mov word [DAP2.sectors], 64
     ; cmp byte [booted_from_gpt], 0
     ; jne not_yet_supported
     mov ebx, [partition]
     mov eax, [ebx + Part.start_LBA - Part]
-    add eax, 7
+    add eax, 24
     mov dword [DAP2.start], eax
     ; add eax, 7
     ; jmp $
@@ -452,7 +462,7 @@ memory_err:
 jmp $
 
 mmap_count dd 0
-mmap_ptr equ 0x1000
+mmap_ptr equ 0x9000
 
 
 DAP2:
@@ -522,4 +532,9 @@ pmode_set:
     jmp 0x8:0x10000
     ; db "Hello, World", 0
 jmp pmode_set
-times 3584 - ($-$$) db 0
+times 4608 - ($-$$) db 0
+times 1024 db 0
+main_checksum:
+times 512 db 0
+backup:
+times 12 * 512 db 0

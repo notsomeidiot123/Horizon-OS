@@ -3,7 +3,7 @@ nasm -f bin src/hBoot/main.s -o bin/boot/boot.bin
 nasm -f elf src/kernel/kentry.s -o bin/kernel/kentry.o
 nasm -f elf src/kernel/drivers/idt.s -o bin/kernel/idt.o
 gcc src/kernel/kmain.c -o bin/kernel/kernel.o -ffreestanding -c -g -fno-pie\
- -m32
+ -m32 -O0
 
 ld -T linker.ld -melf_i386
 cat bin/mbr/mbr.bin  > HorizonOS.iso

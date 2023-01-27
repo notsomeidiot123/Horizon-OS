@@ -1,5 +1,5 @@
 qemu-system-x86_64 \
--m 64M \
+-m 32M \
 -name HorizonOS \
 -no-reboot \
 -no-shutdown \
@@ -12,6 +12,9 @@ qemu-system-x86_64 \
 -d int \
 -device virtio-mouse \
 -device virtio-keyboard \
--M smm=off
+-M smm=off \
+-usb \
+-smp 1
+# -acpitable rdsp
 
 hd HorizonOS.iso > hd.txt

@@ -28,6 +28,7 @@ SECTIONS{
         *(.bss)
         _BSS_END_ = .;
     }
+    
 }
-ksize = .;
+ksize = . + 1;
 OUTPUT(bin/kernel/kernel.bin)

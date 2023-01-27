@@ -5,3 +5,6 @@ hd*
 HorizonOS.iso
 out.*
 mem.*
+.vscode
+info/changelog.*
+#changelog will be added after first build

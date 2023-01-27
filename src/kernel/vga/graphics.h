@@ -1,6 +1,16 @@
 #include "../memory/memory.h"
 #include <stdarg.h>
 #pragma once
+
+struct{
+    unsigned char textmode;
+    unsigned char mode;
+    unsigned int res_x;
+    unsigned int res_y;
+    unsigned int depth;
+
+}vga_desc;
+
 unsigned short *d_buffer;
 unsigned int xpos = 0;
 unsigned int ypos = 0;
@@ -46,26 +56,61 @@ void t_mov_cursor(int x, int y){
     outb(0x3d5, (unsigned char )((pos >> 8) & 0xff));
 }
 
+
+
 void kputc(char j){
-    if(j == '\n'){
-        ypos++;
-        xpos = 0;
-        return;
+    if(vga_desc.textmode){
+        if(j == '\n'){
+            ypos++;
+            xpos = 0;
+            if(ypos == TM_Y_RES_MAX){
+                ypos--;
+                memcpy((char *)0xb8000 + TM_X_RES_MAX * 2, (char *)0xb8000, (TM_X_RES_MAX * TM_Y_RES_MAX * 2) - TM_X_RES_MAX * 2 );
+                memset((char *)0xb8000 + ((TM_Y_RES_MAX-1) * TM_X_RES_MAX * 2), TM_X_RES_MAX * 2, 0);
+            }
+            return;
+        }
+        else if(j == '\r'){
+            xpos = 0;
+            return;
+        }
+        else if(j == '\b'){
+            short * c =(short *)(0xb8000);
+            c += (ypos * TM_X_RES_MAX) + --xpos;
+            *c = theme.colorData << 8| ' ';
+            t_mov_cursor(xpos, ypos);
+            if(xpos < 0){
+                xpos = TM_X_RES_MAX;
+                ypos--;
+            }
+            return;
+        }else if(j == '\t'){
+            j = ' ';
+        }
+        short * c =(short *)(0xb8000);
+        c += (ypos * TM_X_RES_MAX) + xpos++;
+        *c = theme.colorData << 8| j;
+        if(ypos == TM_Y_RES_MAX){
+            ypos--;
+            memcpy((char *)0xb8000 + TM_X_RES_MAX * 2, (char *)0xb8000, (TM_X_RES_MAX * TM_Y_RES_MAX * 2) - TM_X_RES_MAX * 2 );
+            memset((char *)0xb8000 + ((TM_Y_RES_MAX-1) * TM_X_RES_MAX * 2), TM_X_RES_MAX * 2, 0);        }
+        t_mov_cursor(xpos, ypos);
     }
-    else if(j == '\r'){
-        xpos = 0;
-        return;
+    else{
+        //terminal_output(c)
     }
-    short * c =(short *)(0xb8000);
-    c += (ypos * TM_X_RES_MAX) + xpos++;
-    *c = theme.colorData << 8| j;
-    t_mov_cursor(xpos, ypos);
 }
 
 void kputs(char *str){
-    while(*str){
-        kputc(*str++);
+    if(vga_desc.textmode){
+        while(*str){
+            kputc(*str++);
+        }
     }
+    else{
+        //memcpy to stdout & call display
+    }
+    
 }
 
 char *convert(unsigned int num, int b){
@@ -95,7 +140,7 @@ void kclear_text(){
 void kprintf(char *str, ...){
     char *format = str;
     char *s;
-    int i;
+    unsigned int i;
     va_list args;
     va_start(args, str);
     while(*format){
@@ -127,9 +172,17 @@ void kprintf(char *str, ...){
                 }
                 kputs(convert(i, 16));
                 break;
+            case 'b':
+                i = va_arg(args, int);
+                // if( i < 0){
+                //     i *= -1;
+                //     // kputc('-');
+                // }
+                kputs(convert(i, 2));
+                break;
             case 's':
                 s = va_arg(args, char *);
-                kputs(s);
+                kprintf(s);
                 break;
         }
         format++;
