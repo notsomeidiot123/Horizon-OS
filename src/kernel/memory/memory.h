@@ -18,10 +18,19 @@ unsigned char inb(unsigned short port){
     return byte;
 }
 char strcmp(char *s, char *c){
-    while(*s){
+    while(*s != 0){
         if(*(s++) != *(c++)){
             return 0;
+        }else{
+            if(*(s-1) == *(c-1)){
+                continue;
+            }
         }
     }
     return 1;
 }
+/**
+ * tmp = RSDP;
+            struct ACPISDTHeader *header = (struct ACPISDTHeader *)RSDP->RsdtAddress;
+    
+*/

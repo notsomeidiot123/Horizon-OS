@@ -1,7 +1,9 @@
 #pragma once
-#include "input/ps2.h"
+
 #include "idt.h"
+#include "../memory/mmanager.h"
 #include <cpuid.h>
+#include "acpi.h"
 
 #define KB_PS2 0
 #define KB_USB 1
@@ -9,10 +11,15 @@
 
 struct{
     struct{
-        unsigned char pata_0:1;
-        unsigned char pata_1:1;
-        unsigned char pata_2:1;
-        unsigned char pata_3:1;
+        struct{
+            unsigned int max_lba;
+            unsigned char driver_type;
+            unsigned char bootable:1;
+            unsigned char reserved:1;
+            unsigned char connected:1;
+            unsigned char mount: 5;
+        }drives[32];
+        unsigned char acpi;
     }data_storage;
     
     struct{
@@ -22,6 +29,7 @@ struct{
     
     struct{
         unsigned char pcspeaker:1;
+        unsigned char sb16:1;
     }audio;
     
     struct 
@@ -29,6 +37,7 @@ struct{
         unsigned char ps_2_kbd : 1;
         unsigned char ps_2_kbd_keymap : 2;
         unsigned char ps_2_mouse : 1;
+        unsigned char kdb_controller : 1;
     }ps_2input;
     
     //USB, COM & others
@@ -173,22 +182,144 @@ char * parse_bda(){
     // kprintf("[Debug] ");
     return bios_data_area->EBDA_base << 4;
 }
-struct RSDPointer{
-    char Signature[8];
-    unsigned char Checksum;
-    char OEMID[6];
-    unsigned char Revision;
-    unsigned int RsdtAddress;
-}__attribute__((packed)) *RSDP;
-struct RSDPointer *locate_rsdp(char *ebda){
-    for(int i = ebda; i < ebda + 0x400; i += sizeof(struct RSDPointer)){
-        RSDP = i;
-        if(strcmp(RSDP->Signature, "RDS PTR")){
-            return RSDP;
+
+int cmprsdt(char *ptr){
+    char *rdststr = "RSD PTR ";
+    for(int i = 0; i < 8; i++){
+        if(ptr[i] == rdststr[i]){
+            continue;
+        }else{
+            return 0;
         }
     }
-    return NULL;
+    return 1;
 }
+struct RSDPointer *locate_rsdp(char *ebda){
+    struct RSDPointer *tmp = NULL;
+    for(int i = ebda; i < ebda + 0x1000; i += sizeof(RSDP)){
+        RSDP = i;
+        if(cmprsdt(RSDP->Signature)){
+            tmp = RSDP;
+            break;
+        }
+    }
+    if(tmp == NULL){
+        for(int i = 0xe0000; i < 0xfffff; i+= sizeof(RSDP)){
+            RSDP = i;
+            if(cmprsdt(RSDP->Signature)){
+                tmp = RSDP;
+                break;
+            }
+        }
+    }
+    // kprintf("%x", (unsigned )RSDP);
+    // struct ACPISDTHeader *header = tmp->RsdtAddress;
+    // kprintf("%x", header);
+    if(!(cmprsdt(RSDP->Signature))){
+        connected.data_storage.acpi = 0;
+        connected.ps_2input.kdb_controller = 1; //assumed. if no ACPI
+        return 0;
+    }
+    if(RSDP->Revision == 1){
+        kprintf("ACPI 2.0");
+        acpi_version = 1;
+    }else{
+        connected.ps_2input.kdb_controller = 1;
+    }
+    connected.data_storage.acpi = 1;
+    return RSDP;
+}
+char table_types[][5] = {
+    "NULL\0",
+    "APIC\0",
+    "DSDT\0",
+    "FACP\0",
+    "SRAT\0",
+    "SSDT\0",
+    "XSDT\0",
+    "RSDT\0",
+    "HPET\0",
+    "UNKN\0",
+};
+
+int check_table_type(char sig[4]){
+    
+    int nomat = 0;
+    for(int i = 0; i < 10; i++){
+        for(int j = 0; j < 4; j++){
+            if(sig[j] != table_types[i][j]){
+                nomat = 1;
+                break;
+            }
+        }
+        if(!nomat){
+            return i;
+        }else{
+            nomat = 0;
+        }
+    }
+    return 0;
+}
+
+int parse_fadt(struct ACPISDTHeader *header){
+    if(header == NULL){
+        return 1;
+    }
+    FADT_PRESERVED = header;
+    // kprintf("Test");
+    if(!(FADT_PRESERVED->BootArchitectureFlags & 2) && acpi_version){
+        connected.ps_2input.kdb_controller = 0;
+    }else if(FADT_PRESERVED->BootArchitectureFlags & 2 && acpi_version){
+        connected.ps_2input.kdb_controller = 1;
+    }
+    kprintf("[Finished]\n");
+    int res = parseDSDT(FADT_PRESERVED->Dsdt);
+    return 0;
+    //parse DSDT
+}
+
+void parse_rdst(struct RSDPointer *rsdp){
+    if(rsdp == NULL){
+        kprintf("ACPI ERROR 0x01\n");
+        return;
+    }
+    struct ACPISDTHeader *header = (struct ACPISDTHeader *)rsdp->RsdtAddress;
+    enum ACPI_TABLE_TYPE type = check_table_type(header->Sig);
+    unsigned int len = (header->len - sizeof(*header))/4;
+    unsigned int *sdt_pointers = header;
+    sdt_pointers += (36/4);
+    //IDK WHY THIS DOESNT WORK ON THE LINE LITERALLY RIGHT ABOVE IT
+    
+    kprintf("Entries: %d\n", len);
+    for(int i = 0; i < len; i++){
+        struct ACPISDTHeader *h = (struct ACPISDTHeader*)sdt_pointers[i];
+        enum ACPI_TABLE_TYPE t_type = check_table_type(h->Sig);
+        kprintf("|-");
+        switch(t_type){
+            case ACPI_FADT:
+                kprintf("Parsing FADT: ");
+                if(parse_fadt(h)){
+                    kprintf("\r|-FADT: ACPI ERROR 0x03\n");
+                    continue;
+                }
+                break;
+            case ACPI_MADT:
+                kprintf("Parsing MADT: ");
+                break;
+            case ACPI_NULL | ACPI_UNKN:
+                kprintf("ACPI ERROR 0x02\n");
+                continue;
+                break;
+                // return;
+            default:
+                kprintf("%s: ACPI ERROR 0x4\n", table_types[t_type]);
+                continue;
+        }
+        kprintf("[Finished]\n");
+    }
+    kprintf("|______________________\n");
+}
+
 unsigned int ticks = 0;
 unsigned int seconds = 0;
 
@@ -204,10 +335,12 @@ void pit_tick_handler(registers *regs){
 int wait_seconds(unsigned int secs){
     static unsigned int future;
     if(secs == 0){
-        return seconds >= future;
+        // if(seconds >= future){
+        //     kprintf("Finished timer\n");
+        // }
+        return seconds < future;
     }else{
         future = secs;
-        
     }
 }
 int wait_ticks(unsigned int fticks){
@@ -218,3 +351,4 @@ int wait_ticks(unsigned int fticks){
         future = fticks;
     }
 }
+#include "input/ps2.h"

@@ -5,6 +5,7 @@ INPUT(
     bin/kernel/kentry.o
     bin/kernel/kernel.o
     bin/kernel/idt.o
+    bin/shell/shell.o
 )
 
 

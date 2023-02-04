@@ -7,7 +7,32 @@
 #define SLAVE_PIC 0xa0
 #define SLAVE_PIC_DATA 0xa1
 #define PIC_EOI 0x20
-
+union{
+    unsigned char byte;
+    struct{
+        unsigned char pit: 1;
+        unsigned char ps2kb: 1;
+        unsigned char cascade: 1;
+        unsigned char com2: 1;
+        unsigned char com1: 1;
+        unsigned char lpt2: 1;
+        unsigned char floppy: 1;
+        unsigned char lpt1: 1;
+    }data;
+}pic_mask_master;
+union{
+    unsigned char byte;
+    struct{
+        unsigned char cmos: 1;
+        unsigned char perif_0: 1;
+        unsigned char perif_1: 1;
+        unsigned char perif_2: 1;
+        unsigned char ps2m: 1;
+        unsigned char fpu: 1;
+        unsigned char pata_p: 1;
+        unsigned char pata_s: 1;
+    }data;
+}pic_mask_slave;
 typedef struct {
     unsigned short BaseLow;
     unsigned short SegmentSelector;
@@ -219,6 +244,8 @@ extern void load_idt();
 
 
 void idt_init(){
+    pic_mask_master.byte = 0;
+    pic_mask_slave.byte = 0;
     IDT_Desc.base = (unsigned int)&IDT;
     IDT_Desc.Limit = ((unsigned short)sizeof(IDTDescriptor) * 256) - 1;
     idt_set(0, (unsigned)_isr0, 0x8e);
@@ -272,7 +299,7 @@ void idt_init(){
 	idt_set(47, (unsigned)irq15, 0x8E);
     idt_set(0x80, (unsigned)softint, 0b11101111);
     
-    outb(0x21, 0xfd);
+    outb(0x21, 0xff);
     outb(0xa1, 0xff);
     asm("sti");
     load_idt();
@@ -297,37 +324,21 @@ enum PIC_MASKS_MASTER{
     MASK_PATA_S = 128
 };
 
-union{
-    unsigned char byte;
-    struct{
-        unsigned char pit: 1;
-        unsigned char ps2kb: 1;
-        unsigned char cascade: 1;
-        unsigned char com2: 1;
-        unsigned char com1: 1;
-        unsigned char lpt2: 1;
-        unsigned char floppy: 1;
-        unsigned char lpt1: 1;
-    }data;
-}pic_mask_master;
-union{
-    unsigned char byte;
-    struct{
-        unsigned char cmos: 1;
-        unsigned char perif_0: 1;
-        unsigned char perif_1: 1;
-        unsigned char perif_2: 1;
-        unsigned char ps2m: 1;
-        unsigned char fpu: 1;
-        unsigned char pata_p: 1;
-        unsigned char pata_s: 1;
-    }data;
-}pic_mask_slave;
+
 void pic_remask(unsigned char master_mask, char slave_mask){
-    outb(0x21, !master_mask);
-    outb(0xa1, !slave_mask);
+    outb(0x21, ~master_mask);
+    outb(0xa1, ~slave_mask);
 }
 void pic_disable(){
     outb(0x21, 0xff);
     outb(0xa1, 0xff);
+}
+
+void disable_ps2kbd(){
+    pic_mask_master.data.ps2kb = 0;
+    pic_remask(pic_mask_master.byte, pic_mask_slave.byte);
+}
+void enable_ps2kbd(){
+    pic_mask_master.data.ps2kb = 1;
+    pic_remask(pic_mask_master.byte, pic_mask_slave.byte);
 }

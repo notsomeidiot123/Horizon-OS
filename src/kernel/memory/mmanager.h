@@ -2,7 +2,8 @@
 #include "linear.h"
 //allows space between kernel and EBDA
 #define MEM_PAGE_TABLE_START 0x20000;
-#define NULL (void *)0
+#define NULL 0
+#define NULLPTR 0
 #pragma once
 void init_master_page_table();
 struct 
@@ -65,7 +66,7 @@ int initram(unsigned int ent_count, mmap_ent *restrict mmap_ptr){
     unsigned int usable_ram = 0;
     
     mem_descriptor.page_dir_table_start = (unsigned char *)MEM_PAGE_TABLE_START;
-    for(int i = 0; i < ent_count; i++){
+    for(int i = 1; i < ent_count; i++){
         // kprintf("%d : %x | %x\n", mmap_arr[i].type, mmap_arr[i].base_low, mmap_arr[i].limit_low + mmap_arr[i].base_low);
         if(mmap_ptr[i].type == 1){
             // kprintf("%d : %x | %x\n", mmap_arr[i].type, mmap_arr[i].base_low, mmap_arr[i].limit_low);

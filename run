@@ -9,12 +9,13 @@ qemu-system-x86_64 \
 -monitor stdio \
 -soundhw sb16 \
 -soundhw pcspk \
--d int \
 -device virtio-mouse \
 -device virtio-keyboard \
 -M smm=off \
+-smp 1 \
 -usb \
--smp 1
+
+# -d int \
 # -acpitable rdsp
 
 hd HorizonOS.iso > hd.txt

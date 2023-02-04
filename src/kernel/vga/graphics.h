@@ -34,7 +34,7 @@ int debug_fb = 0;
 #define TM_PURPLE 5
 #define TM_BROWN 6
 #define TM_LGRAY 7
-#define LIGHT | 8
+#define LIGHT 8 |
 #define TM_WHITE 0xf
 #define TM_YELLOW 0xe
 
