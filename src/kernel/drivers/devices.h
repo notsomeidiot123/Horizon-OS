@@ -4,21 +4,33 @@
 #include "../memory/mmanager.h"
 #include <cpuid.h>
 #include "acpi.h"
+#include "disks/ata.h"
 
 #define KB_PS2 0
 #define KB_USB 1
 #define KEYMAP_EN_US_ASCII 0
 
+enum storage_driver_type{
+    NULL_DRIVER,
+    ATA_PIO,
+    ATA_DMA,
+    SATA_LEGACY,
+    SATA_ACHI,
+    ATAPI
+};
+
+
 struct{
     struct{
         struct{
             unsigned int max_lba;
-            unsigned char driver_type;
+            enum storage_driver_type;
             unsigned char bootable:1;
             unsigned char reserved:1;
             unsigned char connected:1;
             unsigned char mount: 5;
         }drives[32];
+        unsigned char ata_last_selected;
         unsigned char acpi;
     }data_storage;
     

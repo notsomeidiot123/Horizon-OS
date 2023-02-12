@@ -2,11 +2,12 @@
 #include "../idt.h"
 #include "../../vga/graphics.h"
 #include "../devices.h"
-#include "../../shell/default.h"
+#include "../../shell/shell.h"
+// #include "../../shell/default.h"
 
 
 
-void (*shell_input_handler)(unsigned char character);
+// void (*shell_input_handler)(char character);
 
 
 #define KBD_CONTROLLER_CMD 0x64
@@ -48,9 +49,9 @@ int init_ps_2_kbd(unsigned char scancode_set, void (*handler)(unsigned char char
     outb(KBD_CONTROLLER_CMD, 0xAD);
     
     if(handler){
-        shell_input_handler = handler;
+        // horizonShellTextInput = handler;
     }else{
-        shell_input_handler = 0;
+        // horizonShellTextInput = 0;
     }
     
     KBD_STATUS_BYTE status;
@@ -317,25 +318,19 @@ void ps2kbd_irq(registers *r){
                 control_pressed = 1;
                 return;
             }
-            if(shell_input_handler){
-                if(control_pressed){
-                    if(keymap_data == '\b'){
-                        keymap_data = '\r';
-                    }
+            // if(horizonShellTextInput){
+            if(control_pressed){
+                if(keymap_data == '\b'){
+                    keymap_data = '\r';
                 }
-                if(shift_pressed || caps_en){
-                    shell_input_handler(shift_key(keymap_data));
-                }else{
-                    shell_input_handler(keymap_data);
-                }
-            }else if(vga_desc.textmode){
-                if(control_pressed){
-                    if(keymap_data == '\b'){
-                        keymap_data = '\r';
-                    }
-                }
-                kprintf("%c", shift_pressed ? shift_key(keymap_data) : keymap_data);
             }
+            if(shift_pressed || caps_en){
+                horizonShellTextInput(shift_key(keymap_data));
+            }else{
+                // kprintf("\n%c", keymap_data);
+                horizonShellTextInput(keymap_data);
+            }
+            // }
         }
         else if(data & 0x80){
             int index = data ^0x80;

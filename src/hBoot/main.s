@@ -1,48 +1,63 @@
 org 0x7c00
 bits 16
-
-jmp 0:start
-times 5 - ($-$$) nop
+; times 2
+jmp start
+times 3 - ($-$$) nop
 BPD:
     .FSName:
-        db "EXFAT   "
-    .zero:
-        times 53 db 0
-    .part_offset:
-        dd 2048
-        dd 0
-    .VolumeLength:
-        dd 0x100000
-        dd 0
-    .FATOffset:
-        dd 0x8000
-    .FATLength:
-        dd 256
-    .ClusterHeapOffset:
-        dd (2048 + 0x8000+ 256)
-    .ClusterCount:
-        dd 0x1EEE0
-    .RootDirCluster:
-        dd 0
-    .VolSerNum:
-        dd 0x20684f53
-    .FsRev:
-        dw 1
-    .VolFlags:
-        dw 0x2
-    .BytesPerSectorShift:
-        db 12
-    .SectorsPerClusterShift:
-        db 9
-    .numFats:
-        db 1
-    .drivesel:
-        db 0x80
-    .percentUsed:
-        db 0
+        db "MSWIN4.1"
+    .bps:
+        dw 512
+    .spc:
+        db 8
     .reserved:
-        times 7 db 0
-
+        dw 69
+    .fats:
+        db 2
+    .rootdirentries:
+        dw 1
+    .sectors:
+        dw 0
+    .mediatype:
+        db 0xf8
+    .sectors_per_fat:
+        dw 0
+    .sectors_per_track:
+        dw 32
+    .heads:
+        dw 4
+    .hidden:
+        dd 1
+    .large_sector_count:
+        dd 1046528
+EBPB:
+    .sectors_per_fat:
+        dd 1048506
+    .flags:
+        dw 0
+    .version:
+        dw 1
+    .root_dir_cluster:
+        dd 2
+    .fs_info_sector:
+        dw (4608/512)+1
+    .backup:
+        dw 1
+    .reserved:
+        times 12 db 0
+    .drive_no:
+        db 0x80
+    .ntflags:
+        db 0
+    .sig: 
+        db 0x28
+    .volume_id:
+        db "IMIK"
+    .label:
+        db " HORIZONOS "
+    .sys_id:
+        db "FAT32   "
+    
 start:
     
     ; jmp .set_stack
@@ -374,7 +389,7 @@ check_hardware:
         popfd
         and eax, 0x00200000
         jz .check_pci2_0
-        mov byte [cpuid_present], 0x1
+        mov word [cpuid_present], 0x1
         mov bx, cpuid_ex
         call printstr
     .check_pci2_0:
@@ -387,10 +402,10 @@ check_hardware:
         xor bx, bx
         int 0x15
         jc load_kernel
-        mov al, [cpuid_present]
+        mov ax, [cpuid_present]
         or eax, 0x2
-        mov byte [cpuid_present], al
-        ; or byte [cpuid_present], 0x2;
+        mov word [cpuid_present], ax
+        ; or word [cpuid_present], 0x2;
 load_kernel:
     clc
     mov bx, kload_p
@@ -398,7 +413,7 @@ load_kernel:
     mov bx, 0
     mov ds, bx
     ; nop
-    mov word [DAP2.sectors], 64
+    mov word [DAP2.sectors], 128
     ; cmp byte [booted_from_gpt], 0
     ; jne not_yet_supported
     mov ebx, [partition]
@@ -481,7 +496,7 @@ DAP2:
         dd 0
 
 cpuid_present:
-    db 0
+    dw 0
 pci2_0:
     db 0
 
@@ -516,7 +531,6 @@ fail: db "Failed", 0xa, 0xd, 0
 cpuid_ex: db "Found: CPUID", 0xa, 0xd, 0
 kload_p: db "Loading Kernel", 0xa, 0xd, 0
 gpterr: db "GPT Loading not currently supported", 0xa, 0xd, 0
-
 [bits 32]
 pmode_set:
     mov eax, 0x10
@@ -528,11 +542,12 @@ pmode_set:
     ; jmp $
     push dword [mmap_count]
     push dword mmap_ptr
-    push byte cpuid_present     
+    push word [cpuid_present]    
     jmp 0x8:0x10000
     ; db "Hello, World", 0
 jmp pmode_set
 times 4608 - ($-$$) db 0
+FS_INFO:
 times 1024 db 0
 main_checksum:
 times 512 db 0

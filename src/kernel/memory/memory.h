@@ -17,7 +17,15 @@ unsigned char inb(unsigned short port){
     asm volatile ("inb %1, %0" :  "=a"(byte) : "Nd"(port) );
     return byte;
 }
+int strlen(char *str){
+    int i = 0;
+    while(*(str + i++));
+    return i;
+}
 char strcmp(char *s, char *c){
+    if(strlen(s) != strlen(c)){
+        return 0;
+    }
     while(*s != 0){
         if(*(s++) != *(c++)){
             return 0;

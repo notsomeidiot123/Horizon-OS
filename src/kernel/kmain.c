@@ -2,9 +2,12 @@
 #include "vga/graphics.h"
 #include "drivers/idt.h"
 #include "drivers/devices.h"
+#include "shell/shell.h"
+
 unsigned int noacpi_debug = 1;
 extern unsigned int ksize;
 extern void kmain(unsigned char flags, mmap_ent *mmap_ptr, unsigned int mmap_count ){
+    //technically, this is part of the boot process lmao
     setTheme(0, LIGHT TM_LGRAY);
     vga_desc.textmode = 1;
     
@@ -49,12 +52,12 @@ extern void kmain(unsigned char flags, mmap_ent *mmap_ptr, unsigned int mmap_cou
     }
     kprintf("%s%s\n", procinfo.dword_1.strct.pae ? "[PAE Available] " : "", procinfo.dword_1.strct.apic ? "[APIC Available]" : "");
     kprintf("Pausing for Readability...\n");
-    wait_seconds(3);
-    while(wait_seconds(NULL));
+    // wait_seconds(3);
+    // while(wait_seconds(NULL));
     
-    
-    enable_ps2kbd();
+    // enable_ps2kbd();
     // pic_disable();
+    ata_identify();
     horizonShell();
     for(;;);
     // return;
