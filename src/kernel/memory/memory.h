@@ -17,10 +17,21 @@ unsigned char inb(unsigned short port){
     asm volatile ("inb %1, %0" :  "=a"(byte) : "Nd"(port) );
     return byte;
 }
+void outw(unsigned short port, unsigned short data){
+    asm volatile ("outw %0, %1" ::  "a"(data), "Nd"(port) );
+}
+unsigned char inw(unsigned short port){
+    unsigned short word = 0;
+    asm volatile ("inw %1, %0" :  "=a"(word) : "Nd"(port) );
+    return word;
+}
 int strlen(char *str){
     int i = 0;
     while(*(str + i++));
     return i;
+}
+void strcpy(char *src, char *dest){
+    memcpy(src, dest, strlen(src));
 }
 char strcmp(char *s, char *c){
     if(strlen(s) != strlen(c)){

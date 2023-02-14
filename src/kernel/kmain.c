@@ -3,8 +3,13 @@
 #include "drivers/idt.h"
 #include "drivers/devices.h"
 #include "shell/shell.h"
-
-unsigned int noacpi_debug = 1;
+// unsigned int noacpi_debug = 0;
+#ifdef DEBUG
+    unsigned int noacpi_debug = 1;
+#endif
+#ifndef DEBUG
+    unsigned int noacpi_debug = 0;
+#endif
 extern unsigned int ksize;
 extern void kmain(unsigned char flags, mmap_ent *mmap_ptr, unsigned int mmap_count ){
     //technically, this is part of the boot process lmao
@@ -57,7 +62,7 @@ extern void kmain(unsigned char flags, mmap_ent *mmap_ptr, unsigned int mmap_cou
     
     // enable_ps2kbd();
     // pic_disable();
-    ata_identify();
+    ata_identify_all();
     horizonShell();
     for(;;);
     // return;

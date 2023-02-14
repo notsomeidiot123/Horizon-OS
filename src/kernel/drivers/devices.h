@@ -10,10 +10,26 @@
 #define KB_USB 1
 #define KEYMAP_EN_US_ASCII 0
 
+#ifdef DEBUG
+    int lookfor_linux = 1;
+#else  
+    int lookfor_linux = 0;
+#endif
+
+#define DRIVE_SUCCESS 0
+#define DRIVE_ERR 0x80
+#define NO_EXIST + 1
+#define OUT_BOUNDS + 2
+#define READ_ERR + 3
+#define WRITE_ERR  + 4
+
+
 enum storage_driver_type{
     NULL_DRIVER,
-    ATA_PIO,
-    ATA_DMA,
+    ATA_PIO28,
+    ATA_DMA28,
+    ATA_PIO48,
+    ATA_DMA48,
     SATA_LEGACY,
     SATA_ACHI,
     ATAPI
@@ -23,12 +39,14 @@ enum storage_driver_type{
 struct{
     struct{
         struct{
-            unsigned int max_lba;
+            unsigned int max_lba_low;
+            unsigned int max_lba_hih;
             enum storage_driver_type;
             unsigned char bootable:1;
             unsigned char reserved:1;
             unsigned char connected:1;
             unsigned char mount: 5;
+            char name[32];
         }drives[32];
         unsigned char ata_last_selected;
         unsigned char acpi;
