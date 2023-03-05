@@ -2,6 +2,8 @@
 #include <stdarg.h>
 #pragma once
 
+#define LOG(a, s) kprintf("[%s]: %s", #a, s);
+
 struct{
     unsigned char textmode;
     unsigned char mode;

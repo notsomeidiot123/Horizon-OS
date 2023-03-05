@@ -1,7 +1,7 @@
-#pragma once
 #include "../devices.h"
+#pragma once
 #include "../../vga/graphics.h"
-
+#include <stdint.h>
 
 //essentially private constants that should not be used outside of this file lmao
 //i can't believe im making essentially my own language lmao
@@ -37,20 +37,50 @@
 
 
 
+
 void ata_identify_all(){
-    
+    ata_identify(0xa0, BUS_ONE);
+    ata_identify(0xb0, BUS_ONE);
+    // ata_identify(0xa0, BUS_ONE ALT);
+    // ata_identify(0xb0, BUS_ONE ALT);
 }
+
 int ata_identify(int d, int bus){
+    unsigned short data[256] = {0};
     outb(bus DRIVE_SEL , d);
+    for(int i = 0; i < 15; i++){
+        inb(bus STATUS_REG);
+    }
     // while(inb(BUS_ONE) STAT_RDY == 0 || )
     outb(bus SECTOR_COUNT, 0);
     outb(bus LBA_LOW, 0);
     outb(bus LBA_MID, 0);
     outb(bus LBA_HIH, 0);
     outb(bus COMMAND_REG, 0xEC);
-    if(inb(bus STATUS_REG) == 0){
+    int stat = inb(bus STATUS_REG);
+    if(!stat){
         return -1;
     }
+    else if(stat & 1){
+        //if status returns error
+        //after this, append code for
+        return -1;
+    }
+    if(inb(bus LBA_HIH) || inb(bus LBA_LOW)){
+        kprintf("DETECTED UNSUPPORTED DRIVE TYPE\n");
+        return -1;
+    }
+    if(stat & 0x80){
+        while(inb(bus STATUS_REG) & 0x80);
+    }
+    // kprintf("This is where i read my data :/\n");
+    for(int i = 0; i < 256; i++){
+        while(!(inb(bus STATUS_REG) STAT_DRQ));
+        data[i] = inw(bus DATA_REG);
+    }
+    kprintf("ATA: %x", data[0]);
+    kprintf("LOW LBA Size: %x\nHiGH LBA Size: %x\n", data[60] ,data[61]);
+    
 }
 
 #undef STAT_ERR

@@ -17,7 +17,7 @@ ld -T linker.ld -melf_i386
 cat bin/mbr/mbr.bin  > HorizonOS.iso
 qemu-img resize HorizonOS.iso 1M
 cat bin/boot/boot.bin bin/kernel/kernel.bin >> HorizonOS.iso
-qemu-img resize HorizonOS.iso 512M
+qemu-img resize HorizonOS.iso 256M
 sudo parted HorizonOS.iso mkpart primary 1M 100%
 hd HorizonOS.iso > hd.txt
 

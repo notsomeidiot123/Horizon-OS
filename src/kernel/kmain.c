@@ -3,6 +3,7 @@
 #include "drivers/idt.h"
 #include "drivers/devices.h"
 #include "shell/shell.h"
+#include "drivers/disks/ata.h"
 // unsigned int noacpi_debug = 0;
 #ifdef DEBUG
     unsigned int noacpi_debug = 1;

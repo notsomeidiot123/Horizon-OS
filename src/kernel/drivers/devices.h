@@ -4,7 +4,6 @@
 #include "../memory/mmanager.h"
 #include <cpuid.h>
 #include "acpi.h"
-#include "disks/ata.h"
 
 #define KB_PS2 0
 #define KB_USB 1
@@ -35,21 +34,23 @@ enum storage_driver_type{
     ATAPI
 };
 
+struct drive_data{
+    unsigned int max_lba_low;//if non-zero, is valid, else, invalid
+    unsigned int max_lba_hih;//if non-zero, is valid, else, invalid
+    enum storage_driver_type;
+    unsigned char bootable:1;
+    unsigned char reserved:1;
+    unsigned char connected:1;
+    unsigned char mount: 5;
+    char name[32];
+};
 
 struct{
     struct{
-        struct{
-            unsigned int max_lba_low;
-            unsigned int max_lba_hih;
-            enum storage_driver_type;
-            unsigned char bootable:1;
-            unsigned char reserved:1;
-            unsigned char connected:1;
-            unsigned char mount: 5;
-            char name[32];
-        }drives[32];
+        struct drive_data drives[32];
         unsigned char ata_last_selected;
         unsigned char acpi;
+        // int current_device_index;
     }data_storage;
     
     struct{
@@ -381,4 +382,12 @@ int wait_ticks(unsigned int fticks){
         future = fticks;
     }
 }
+
+void init_devices(){
+    for(int i = 0; i < 32; i++){
+        connected.data_storage.drives[i].max_lba_hih = 0;
+        connected.data_storage.drives[i].max_lba_low = 0;
+    }
+}
+
 #include "input/ps2.h"
